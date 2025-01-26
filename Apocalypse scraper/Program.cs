@@ -31,7 +31,7 @@ class Program
 
         foreach (var table in tables)
         {
-            if (HasClaimantHeader(table))
+            if (HasClaimantHeader(table) && !table.InnerHtml.Contains("300,000"))
             {
                 //List<string> tableRows= ProcessTable(table);
                 //allRecrds.AddRange(tableRows);
@@ -78,7 +78,7 @@ class Program
 
         foreach (var row in rows.Skip(1)) // Skip header row
         {
-            if (row.InnerHtml.Contains("Hagee"))
+            if (row.InnerHtml.Contains("Whisenant"))
             {
                 int x = 1;
             }
@@ -87,15 +87,41 @@ class Program
             {
                 if (cells.Count >= 4)
                 {
-                    //TODO: If comma-delimited list of dates, do one record for each.
-                    currentDate = ParseDate(cells[0].InnerText.Trim());
-                    var evt = new ApocalypticEvent
+                    // If comma-delimited list of dates, do one record for each.
+                    string dateString = cells[0].InnerText.Trim();
+                    int commas = dateString.Count(f => f == ',');
+                    bool multipleDates = false;
+                    if (commas == 1)
                     {
-                        Date = currentDate,
-                        Claimants = cells[1].InnerText.Trim(),
-                        Description = cells[2].InnerText.Trim()
-                    };
-                    events.Add(evt);
+                        bool isBigNum = int.TryParse(dateString.Split(',')[1], out int value) && value == 0; // e.g. 123,456
+                        multipleDates = !isBigNum;
+                    }
+                    if (multipleDates)
+                    {
+                        string[] dateStrings = dateString.Split(",");
+                        foreach (string parseMe in dateStrings)
+                        {
+                            currentDate = ParseDate(parseMe);
+                            var evt = new ApocalypticEvent
+                            {
+                                Date = currentDate,
+                                Claimants = cells[1].InnerText.Trim(),
+                                Description = cells[2].InnerText.Trim()
+                            };
+                            events.Add(evt);
+                        }
+                    }
+                    else
+                    {
+                        currentDate = ParseDate(dateString);
+                        var evt = new ApocalypticEvent
+                        {
+                            Date = currentDate,
+                            Claimants = cells[1].InnerText.Trim(),
+                            Description = cells[2].InnerText.Trim()
+                        };
+                        events.Add(evt);
+                    }
                 }
                 else if (cells.Count == 3 && currentDate != null)
                 {
@@ -115,11 +141,17 @@ class Program
     static object ParseDate(string input)
     {
         input = Regex.Unescape(input).Replace("&#8211;", "-");
-        input= Regex.Replace(input, @"&#\d+;", string.Empty);
+        input = Regex.Replace(input, @"&#\d+;", string.Empty);
+
+        input = Regex.Replace(input, @"(\d+)-(\d+)", "$2");
         // Check for date range
         if (input.Contains("-"))
         {
             input = input.Split('-')[1].Trim();
+        }
+        if (input.Contains("–")) // not the same chracter, I assure you
+        {
+            input = input.Split('–')[1].Trim();
         }
         if (input.Contains(","))
         {
@@ -136,6 +168,10 @@ class Program
             CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
         {
             return date;
+        }
+        if (DateTime.TryParse(input, out DateTime date2))
+        {
+            return date2;
         }
 
         // Try parsing as a year
