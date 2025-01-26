@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 class Program
 {
@@ -77,7 +78,7 @@ class Program
 
         foreach (var row in rows.Skip(1)) // Skip header row
         {
-            if (row.InnerHtml.Contains("Hon-Ming"))
+            if (row.InnerHtml.Contains("Hagee"))
             {
                 int x = 1;
             }
@@ -86,6 +87,7 @@ class Program
             {
                 if (cells.Count >= 4)
                 {
+                    //TODO: If comma-delimited list of dates, do one record for each.
                     currentDate = ParseDate(cells[0].InnerText.Trim());
                     var evt = new ApocalypticEvent
                     {
@@ -112,10 +114,12 @@ class Program
     }
     static object ParseDate(string input)
     {
+        input = Regex.Unescape(input).Replace("&#8211;", "-");
+        input= Regex.Replace(input, @"&#\d+;", string.Empty);
         // Check for date range
-        if (input.Contains("–"))
+        if (input.Contains("-"))
         {
-            input = input.Split('–')[1].Trim();
+            input = input.Split('-')[1].Trim();
         }
         if (input.Contains(","))
         {
