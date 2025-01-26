@@ -138,8 +138,10 @@ class Program
 
         return events;
     }
+
     static object ParseDate(string input)
     {
+        // if god loves us, then why are dates such a fucking headache?
         input = Regex.Unescape(input).Replace("&#8211;", "-");
         input = Regex.Replace(input, @"&#\d+;", string.Empty);
 
