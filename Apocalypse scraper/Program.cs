@@ -18,7 +18,8 @@ class Program
 
     static async Task Main(string[] args)
     {
-        string url = "https://en.wikipedia.org/wiki/List_of_dates_predicted_for_apocalyptic_events";
+        //string url = "https://en.wikipedia.org/wiki/List_of_dates_predicted_for_apocalyptic_events/index.html";
+        string url = "C:\\Users\\toyma\\source\\repos\\Apocalypse scraper\\Apocalypse scraper\\apocalypses.html";
         string html = await GetHtmlAsync(url);
         List<string> allRecrds = new List<string>();
         string fileName = "apocalypses.csv";
@@ -45,10 +46,13 @@ class Program
 
     static async Task<string> GetHtmlAsync(string url)
     {
-        using (HttpClient client = new HttpClient())
-        {
-            return await client.GetStringAsync(url);
-        }
+        //using (HttpClient client = new HttpClient())
+        //{
+        //    return await client.GetStringAsync(url);
+        //}
+        string text=File.ReadAllText(url);
+
+        return text;
     }
 
     static bool HasClaimantHeader(HtmlNode table)
